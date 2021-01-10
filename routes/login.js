@@ -12,7 +12,7 @@ router.post('/login', function(req, res) {
   if (username == user.username && password == user.password)
     res.send({status: "Login successful!"});
   else
-    res.status(400).send("Invalid credentials!");
+    res.status(400).send({"Invalid credentials!"});
 });
 
 module.exports = router;
