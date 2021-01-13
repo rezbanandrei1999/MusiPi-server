@@ -6,6 +6,9 @@ GPIO.setmode(GPIO.BOARD)
 resistorPin1 = 11
 resistorPin2 = 13
 
+acoperit1 = 0
+acoperit2 = 0
+
 try:
     while True:
         GPIO.setup(resistorPin1, GPIO.OUT)
@@ -20,14 +23,29 @@ try:
         count1 = 0
         count2 = 0
         
-        while GPIO.input(resistorPin1) == GPIO.LOW or GPIO.input(resistorPin2) == GPIO.LOW:
-            if GPIO.input(resistorPin1) == GPIO.LOW:
-                count1 += 1
-            if GPIO.input(resistorPin2) == GPIO.LOW:
-                count2 += 1
         
-        print("Fotoresistor1 : ", count1, " - Fotoresistor2 : ", count2)
-        time.sleep(0.2)
+        acoperit1 = 0
+        acoperit2 = 0
+        
+        while GPIO.input(resistorPin1) == GPIO.HIGH or GPIO.input(resistorPin2) == GPIO.HIGH:
+            if GPIO.input(resistorPin1) == GPIO.HIGH:
+                acoperit1 = 1
+                if acoperit2 == 1:
+                    acoperit1 = 2
+            elif GPIO.input(resistorPin2) == GPIO.HIGH:
+                acoperit2 = 1
+                if acoperit1 == 1:
+                    acoperit2 = 2
+            else: # if GPIO.input(resistorPin1) == GPIO.HIGH and GPIO.input(resistorPin1) == GPIO.HIGH:
+                continue
+                    
+        if(acoperit1 == 1 and acoperit2 == 2):
+            print("Dioda 1 -> Dioda 2")
+        if(acoperit1 == 2 and acoperit2 == 1):
+            print("Dioda 2 -> Dioda 1")
+        
+        # print("Acoperit1 : ", acoperit1, " - Acoperit2 : ", acoperit2, "\n")
+        time.sleep(0.1)
  
 except KeyboardInterrupt:
     print("Program is done.")
