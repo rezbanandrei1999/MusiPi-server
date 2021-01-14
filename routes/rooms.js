@@ -39,7 +39,7 @@ router.post('/rooms/activate', function(req, res) {
   var active = (req.body.active == 'true');
   var ref = database.ref("rooms");
   ref.child(id).update({ "active": active });
-
+  res.send({success: "Room status changed!"});
 });
 
 module.exports = router;
