@@ -1,37 +1,75 @@
 var express = require('express');
 var router = express();
-var database = require('./connect.js');
 
 router.get('/rooms', function(req, res) {
 
-  var ref = database.ref("rooms");
-  ref.once("value", function(snapshot) {
-    var filtered = snapshot.val().filter(function (el) {
-      return el != null;
-    });
-    res.send(filtered);
-  });
+  const { MongoClient } = require("mongodb");
+  const uri = 'mongodb://127.0.0.1:27017';
+
+  const client = new MongoClient(uri);
+
+  async function run() {
+    try {
+      await client.connect();
+
+      const database = client.db("musipi");
+      const rooms = database.collection("rooms");
+
+      // query for movies that have a runtime less than 15 minutes
+      const query = { runtime: { $lt: 15 } };
+
+      const options = {
+        // sort returned documents in ascending order by title (A->Z)
+        sort: { title: 1 },
+      // Include only the `title` and `imdb` fields in each returned document
+        projection: { _id: 0, title: 1, imdb: 1 },
+      };
+
+      const cursor = rooms.find();
+
+      var response = []
+      await cursor.forEach(element => {
+          response.push(element);
+      });;
+
+      res.send(response);
+    } finally {
+      await client.close();
+    }
+  }
+  run().catch(console.dir);
 });
 
 router.post('/rooms', function(req, res) {
-  var id = Number(req.body.id);
   var name = req.body.name;
   var pin = Number(req.body.pin);
   var people = 0;
   var active = true;
-  var connected = Number(req.body.connected);
 
   var room = {
-    id: id,
     name: name,
     people: people,
     active: active,
-    pin: pin,
-    connected: connected
+    pin: pin
   };
-  var ref = database.ref("rooms");
-  ref.child(id).set(room);
-  res.send(room);
+  const { MongoClient } = require("mongodb");
+  const uri = 'mongodb://127.0.0.1:27017';
+
+  const client = new MongoClient(uri);
+
+  async function run() {
+    try {
+      await client.connect();
+
+      const database = client.db("musipi");
+      const rooms = database.collection("rooms");
+      await rooms.insertOne(room)
+    } finally {
+      res.send(room);
+      await client.close();
+    }
+  }
+  run().catch(console.dir);
 });
 
 router.post('/rooms/activate', function(req, res) {
