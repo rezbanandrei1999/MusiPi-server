@@ -1,39 +1,24 @@
 var express = require('express');
 var router = express();
+const { MongoClient } = require("mongodb");
+const uri = 'mongodb://127.0.0.1:27017';
+const client = new MongoClient(uri);
 
 router.get('/rooms', function(req, res) {
 
-  const { MongoClient } = require("mongodb");
-  const uri = 'mongodb://127.0.0.1:27017';
-
-  const client = new MongoClient(uri);
-
+  var response = []
   async function run() {
     try {
       await client.connect();
 
-      const database = client.db("musipi");
-      const rooms = database.collection("rooms");
-
-      // query for movies that have a runtime less than 15 minutes
-      const query = { runtime: { $lt: 15 } };
-
-      const options = {
-        // sort returned documents in ascending order by title (A->Z)
-        sort: { title: 1 },
-      // Include only the `title` and `imdb` fields in each returned document
-        projection: { _id: 0, title: 1, imdb: 1 },
-      };
-
+      const rooms = client.db("musipi").collection("rooms");
       const cursor = rooms.find();
 
-      var response = []
-      await cursor.forEach(element => {
-          response.push(element);
+      await cursor.forEach(e => {
+        response.push(e);
       });;
-
-      res.send(response);
     } finally {
+      res.send(response);
       await client.close();
     }
   }
@@ -52,18 +37,14 @@ router.post('/rooms', function(req, res) {
     active: active,
     pin: pin
   };
-  const { MongoClient } = require("mongodb");
-  const uri = 'mongodb://127.0.0.1:27017';
-
-  const client = new MongoClient(uri);
 
   async function run() {
     try {
       await client.connect();
 
-      const database = client.db("musipi");
-      const rooms = database.collection("rooms");
-      await rooms.insertOne(room)
+      const rooms = client.db("musipi").collection("rooms");
+
+      await rooms.insertOne(room);
     } finally {
       res.send(room);
       await client.close();
@@ -73,11 +54,24 @@ router.post('/rooms', function(req, res) {
 });
 
 router.post('/rooms/activate', function(req, res) {
-  var id = Number(req.body.id);
+  var pin = Number(req.body.pin);
   var active = (req.body.active == 'true');
-  var ref = database.ref("rooms");
-  ref.child(id).update({ "active": active });
-  res.send({success: "Room status changed!"});
+
+  async function run() {
+    try {
+      await client.connect();
+
+      const rooms = client.db("musipi").collection("rooms");
+      const filter = {pin: pin}
+      const update = { $set: { active: active } };
+
+      await rooms.updateOne(filter, update);
+    } finally {
+      res.send({success: "Room status changed!"});
+      await client.close();
+    }
+  }
+  run().catch(console.dir);
 });
 
 module.exports = router;
