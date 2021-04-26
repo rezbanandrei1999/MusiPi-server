@@ -2,7 +2,7 @@ var express = require('express');
 var router = express();
 const { MongoClient } = require("mongodb");
 const uri = 'mongodb://127.0.0.1:27017';
-const client = new MongoClient(uri);
+const client = new MongoClient(uri, { useUnifiedTopology: true });
 
 router.get('/rooms', function(req, res) {
 
@@ -19,7 +19,6 @@ router.get('/rooms', function(req, res) {
       });;
     } finally {
       res.send(response);
-      await client.close();
     }
   }
   run().catch(console.dir);
@@ -47,7 +46,6 @@ router.post('/rooms', function(req, res) {
       await rooms.insertOne(room);
     } finally {
       res.send(room);
-      await client.close();
     }
   }
   run().catch(console.dir);
@@ -68,7 +66,6 @@ router.post('/rooms/activate', function(req, res) {
       await rooms.updateOne(filter, update);
     } finally {
       res.send({success: "Room status changed!"});
-      await client.close();
     }
   }
   run().catch(console.dir);
