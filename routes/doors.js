@@ -131,4 +131,5 @@ router.delete('/doors/delete', function(req, res) {
   }
   run().catch(console.dir);
 });
+
 module.exports = router;
