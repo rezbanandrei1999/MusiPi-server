@@ -2,14 +2,13 @@ var express = require('express');
 var router = express();
 
 router.post('/login', function(req, res) {
-  var username = req.body.username;
-  var password = req.body.password;
-
-  if (username == "admin" && password == "admin")
-    res.send({status: "Login successful!"});
-  else
+  if (!req.body.hasOwnProperty('username') || !req.body.hasOwnProperty('password'))
     res.status(400).send({error: "Invalid credentials!"});
-
+  else
+    if (req.body.username == "admin" && req.body.password == "admin")
+      res.send({status: "Login successful!"});
+    else
+      res.status(400).send({error: "Invalid credentials!"});
 });
 
 module.exports = router;
