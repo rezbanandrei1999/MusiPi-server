@@ -1,130 +1,102 @@
-var express = require('express');
-var router = express();
-const { MongoClient } = require("mongodb");
-const { ObjectId } = require("mongodb");
-const uri = 'mongodb://127.0.0.1:27017';
-const client = new MongoClient(uri, { useUnifiedTopology: true });
+let express = require('express')
+let router = express()
+let mysql = require('mysql')
+let details = {
+  host: "localhost",
+  user: "root",
+  password: "admin1234",
+  database: "musipi"
+}
 
 router.get('/rooms', function(req, res) {
-  var response = []
-  async function run() {
-    try {
-      await client.connect();
-
-      const rooms = client.db("musipi").collection("rooms");
-
-      await rooms.find().forEach(e => { response.push(e); });
-    } finally {
-      res.send(response);
-    }
-  }
-  run().catch(console.dir);
-});
+  let con = mysql.createConnection(details)
+  con.connect(function(err) {
+    if (err) console.log(err)
+    con.query("SELECT * FROM rooms", function (err, result, fields) {
+      if (err) console.log(err)
+      res.send(result)
+    })
+  })
+})
 
 router.post('/rooms', function(req, res) {
   if (!req.body.hasOwnProperty('name') || !req.body.hasOwnProperty('pin'))
-    res.status(400).send({error: "Room name and conection pin are required."});
+    res.status(400).send({error: "Room name and conection pin are required."})
   else
   {
-    var room = {
-      name: req.body.name,
-      people: 0,
-      active: true,
-      pin: Number(req.body.pin)
-    };
-
-    async function run() {
-      try {
-        await client.connect();
-
-        const rooms = client.db("musipi").collection("rooms");
-
-        await rooms.insertOne(room);
-      } finally {
-        res.send({success: "Room was added!"});
-      }
-    }
-    run().catch(console.dir);
+    let con = mysql.createConnection(details)
+    let room = [[req.body.name, 0, 1, Number(req.body.pin)]]
+    con.connect(function(err) {
+      if (err) console.log(err)
+      let sql = "INSERT INTO rooms (name, people, active, pin) VALUES ?"
+      con.query(sql, [room], function (err, result) {
+        if (err) console.log(err)
+        res.send({success: "Room was added!"})
+      })
+    })
   }
-});
+})
+
+router.delete('/rooms', function(req, res) {
+  let id = req.body.id
+  if (!req.body.hasOwnProperty('id'))
+    res.status(400).send({error: "Room ID is required."})
+  else
+  {
+    let con = mysql.createConnection(details)
+    con.connect(function(err) {
+      if (err) console.log(err)
+      let sql = `DELETE FROM rooms WHERE id = ${id}`
+      con.query(sql, function (err, result) {
+        if (err) console.log(err)
+        res.send({success: "Room was deleted!"})
+      })
+    })
+  }
+})
 
 router.post('/rooms/edit', function(req, res) {
-  var id = req.body.id;
-  var pin = Number(req.body.pin);
-  var active = (req.body.active == 'true');
-  var name = req.body.name;
-  var people = req.body.people;
+  let id = Number(req.body.id)
+  let pin = Number(req.body.pin)
+  let active = Number(req.body.active)
+  let name = req.body.name
+  let people = req.body.people
 
-  if (!req.body.hasOwnProperty('id'))
-    res.status(400).send({error: "Room ID is required."});
+  if (!req.body.hasOwnProperty('id') && !(req.body.hasOwnProperty('pin') || req.body.hasOwnProperty('active') || req.body.hasOwnProperty('name') || req.body.hasOwnProperty('people')))
+    res.status(400).send({error: "Room ID and one update parameter are required."})
   else
   {
-    async function run() {
-      try {
-        await client.connect();
+    let con = mysql.createConnection(details)
+    con.connect(function(err) {
+      if (err) console.log(err)
 
-        const rooms = client.db("musipi").collection("rooms");
-        const filter = {'_id': ObjectId(id)}
-        var room = await rooms.findOne(filter);
-        if(!req.body.hasOwnProperty('pin'))
-          pin = room.pin;
-
-        if(!req.body.hasOwnProperty('active'))
-          active = room.active;
-
-        if(!req.body.hasOwnProperty('name'))
-          name = room.name;
-
-        if(!req.body.hasOwnProperty('people'))
-          people = room.people;
-
-        const update = { $set: {
-            active: active,
-            pin: pin,
-            name: name,
-            people: people } };
-
-        await rooms.updateOne(filter, update);
-      } finally {
-        res.send({success: "Room status changed!"});
+      let update = {
+        name: name,
+        people: people,
+        active: active,
+        pin: pin
       }
-    }
-    run().catch(console.dir);
+      let pin_string = "", active_string = "", name_string = "", people_string = ""
+
+      if(req.body.hasOwnProperty('pin'))
+        pin_string = `pin = ${update['pin']},`
+
+      if(req.body.hasOwnProperty('active'))
+        active_string = `active = ${update['active']},`
+
+      if(req.body.hasOwnProperty('name'))
+        name_string = `name = '${update['name']}',`
+
+      if(req.body.hasOwnProperty('people'))
+        people_string = `people = ${update['people']},`
+
+      let sql = `UPDATE rooms SET ${name_string}${people_string}${active_string}${pin_string}`.slice(0,-1) + ` WHERE id = ${id}`
+      con.query(sql, function (err, result) {
+        if (err) console.log(err)
+        res.send({success: "Room status changed!"})
+      })
+    })
   }
-});
+})
 
-router.delete('/rooms/delete', function(req, res) {
-  var id = req.body.id;
-
-  if (!req.body.hasOwnProperty('id'))
-    res.status(400).send({error: "Room ID is required."});
-  else
-  {
-    async function run() {
-      try {
-        await client.connect();
-
-        const rooms = client.db("musipi").collection("rooms");
-        const doors = client.db("musipi").collection("doors");
-
-        var filter = {_id: ObjectId(id)}
-        await rooms.deleteOne(filter);
-
-        filter = {$or: [
-          {
-            room_1: ObjectId(id)
-          },
-          {
-            room_2: ObjectId(id)
-          }
-        ]}
-        await rooms.deleteMany(filter);
-      } finally {
-        res.send({success: "Room was deleted!"});
-      }
-    }
-    run().catch(console.dir);
-  }
-});
-
-module.exports = router;
+module.exports = router
