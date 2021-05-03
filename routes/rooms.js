@@ -9,6 +9,7 @@ let details = {
 }
 
 router.get('/rooms', function(req, res) {
+  req.body = JSON.parse(JSON.stringify(req.body));
   let con = mysql.createConnection(details)
   con.connect(function(err) {
     if (err) console.log(err)
@@ -20,12 +21,16 @@ router.get('/rooms', function(req, res) {
 })
 
 router.post('/rooms', function(req, res) {
+  req.body = JSON.parse(JSON.stringify(req.body));
   if (!req.body.hasOwnProperty('name') || !req.body.hasOwnProperty('pin'))
     res.status(400).send({error: "Room name and conection pin are required."})
   else
   {
+    let people = 0;
+    if (req.body.hasOwnProperty('people'))
+      people = Number(req.body.people);
     let con = mysql.createConnection(details)
-    let room = [[req.body.name, 0, 1, Number(req.body.pin)]]
+    let room = [[req.body.name, people, 1, Number(req.body.pin)]]
     con.connect(function(err) {
       if (err) console.log(err)
       let sql = "INSERT INTO rooms (name, people, active, pin) VALUES ?"
@@ -38,6 +43,7 @@ router.post('/rooms', function(req, res) {
 })
 
 router.delete('/rooms', function(req, res) {
+  req.body = JSON.parse(JSON.stringify(req.body));
   let id = req.body.id
   if (!req.body.hasOwnProperty('id'))
     res.status(400).send({error: "Room ID is required."})
@@ -56,6 +62,7 @@ router.delete('/rooms', function(req, res) {
 })
 
 router.post('/rooms/edit', function(req, res) {
+  req.body = JSON.parse(JSON.stringify(req.body));
   let id = Number(req.body.id)
   let pin = Number(req.body.pin)
   let active = Number(req.body.active)
@@ -63,7 +70,7 @@ router.post('/rooms/edit', function(req, res) {
   let people = req.body.people
 
   if (!req.body.hasOwnProperty('id') && !(req.body.hasOwnProperty('pin') || req.body.hasOwnProperty('active') || req.body.hasOwnProperty('name') || req.body.hasOwnProperty('people')))
-    res.status(400).send({error: "Room ID and one update parameter are required."})
+    res.status(400).send({error: "Room ID and at least one update parameter are required."})
   else
   {
     let con = mysql.createConnection(details)

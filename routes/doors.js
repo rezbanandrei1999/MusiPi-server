@@ -9,6 +9,7 @@ let details = {
 }
 
 router.get('/doors', function(req, res) {
+  req.body = JSON.parse(JSON.stringify(req.body));
   let con = mysql.createConnection(details)
   con.connect(function(err) {
     if (err) console.log(err)
@@ -20,26 +21,8 @@ router.get('/doors', function(req, res) {
   })
 })
 
-router.get('/doors/room', function(req, res) {
-  let id = req.body.id
-
-  if (!req.body.hasOwnProperty('id'))
-    res.status(400).send({error: "Room ID is required."})
-  else
-  {
-    let con = mysql.createConnection(details);
-    con.connect(function(err) {
-      if (err) console.log(err)
-      let sql = `SELECT d.id AS id, r1.name as room_1, r2.name as room_2 FROM doors AS d INNER JOIN rooms AS r1 ON r1.id = d.room_1 INNER JOIN rooms AS r2 ON r2.id = d.room_2  WHERE d.room_1 = ${id} OR d.room_2 = ${id}`
-      con.query(sql, function (err, result, fields) {
-        if (err) console.log(err)
-        res.send(result)
-      })
-    })
-  }
-})
-
 router.post('/doors', function(req, res) {
+  req.body = JSON.parse(JSON.stringify(req.body));
   let room_1 = req.body.room_1
   let room_2 = req.body.room_2
   if (!req.body.hasOwnProperty('room_1') || !req.body.hasOwnProperty('room_2'))
@@ -60,6 +43,7 @@ router.post('/doors', function(req, res) {
 })
 
 router.delete('/doors', function(req, res) {
+  req.body = JSON.parse(JSON.stringify(req.body));
   let id = req.body.id
   if (!req.body.hasOwnProperty('id'))
     res.status(400).send({error: "Door ID is required."})
