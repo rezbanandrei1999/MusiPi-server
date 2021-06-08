@@ -9,11 +9,10 @@ let details = {
 }
 
 router.get('/doors', function(req, res) {
-  req.body = JSON.parse(JSON.stringify(req.body));
   let con = mysql.createConnection(details)
   con.connect(function(err) {
     if (err) console.log(err)
-    let sql = "SELECT d.id AS id, r1.name as room_1, r2.name as room_2 FROM doors AS d INNER JOIN rooms AS r1 ON r1.id = d.room_1 INNER JOIN rooms AS r2 ON r2.id = d.room_2"
+    let sql = "SELECT d.id AS id, d.connection as connection, r1.name as room_1, r2.name as room_2 FROM doors AS d INNER JOIN rooms AS r1 ON r1.id = d.room_1 INNER JOIN rooms AS r2 ON r2.id = d.room_2"
     con.query(sql, function (err, result, fields) {
       if (err) console.log(err)
       res.send(result)
@@ -22,18 +21,19 @@ router.get('/doors', function(req, res) {
 })
 
 router.post('/doors', function(req, res) {
-  req.body = JSON.parse(JSON.stringify(req.body));
+  req.body = JSON.parse(JSON.stringify(req.body))
   let room_1 = req.body.room_1
   let room_2 = req.body.room_2
-  if (!req.body.hasOwnProperty('room_1') || !req.body.hasOwnProperty('room_2'))
-    res.status(400).send({error: "Room IDs are required."})
+  let connection = req.body.connection
+  if (!req.body.hasOwnProperty('room_1') || !req.body.hasOwnProperty('room_2') || !req.body.hasOwnProperty('connection'))
+    res.status(400).send({error: "Room IDs and connection value are required."})
   else
   {
     let con = mysql.createConnection(details)
-    let door = [[room_1, room_2]]
+    let door = [[room_1, room_2, connection]]
     con.connect(function(err) {
       if (err) console.log(err)
-      let sql = "INSERT INTO doors (room_1, room_2) VALUES ?";
+      let sql = "INSERT INTO doors (room_1, room_2, connection) VALUES ?";
       con.query(sql, [door], function (err, result) {
         if (err) console.log(err)
         res.send({success: "Door was added!"})
@@ -43,7 +43,7 @@ router.post('/doors', function(req, res) {
 })
 
 router.delete('/doors', function(req, res) {
-  req.body = JSON.parse(JSON.stringify(req.body));
+  req.body = JSON.parse(JSON.stringify(req.body))
   let id = req.body.id
   if (!req.body.hasOwnProperty('id'))
     res.status(400).send({error: "Door ID is required."})

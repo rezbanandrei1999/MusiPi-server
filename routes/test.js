@@ -5,4 +5,4 @@ router.get('/test', function(req, res) {
     res.send({success: "Test successful!"});
 });
 
-module.exports = router;
+module.exports = router
